@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -91,6 +92,7 @@ fun MoraApp(
     viewModel: MoraViewModel,
     onVoiceClick: () -> Unit,
     onSpeak: (String) -> Unit,
+    onStopSpeaking: () -> Unit,
     onShowOverlaySettings: () -> Unit,
     onStartOverlay: () -> Unit,
     onStopOverlay: () -> Unit,
@@ -127,7 +129,8 @@ fun MoraApp(
                         state = state,
                         viewModel = viewModel,
                         onVoiceClick = onVoiceClick,
-                        onSpeak = onSpeak
+                        onSpeak = onSpeak,
+                        onStopSpeaking = onStopSpeaking
                     )
                     AppTab.MEMORY -> MemoryScreen(
                         memories = state.memories,
@@ -184,7 +187,8 @@ private fun AssistantScreen(
     state: MoraUiState,
     viewModel: MoraViewModel,
     onVoiceClick: () -> Unit,
-    onSpeak: (String) -> Unit
+    onSpeak: (String) -> Unit,
+    onStopSpeaking: () -> Unit
 ) {
     var input by rememberSaveable { mutableStateOf("") }
 
@@ -282,6 +286,12 @@ private fun AssistantScreen(
                 maxLines = 3,
                 shape = RoundedCornerShape(18.dp)
             )
+            IconButton(
+                onClick = onStopSpeaking,
+                modifier = Modifier.size(42.dp)
+            ) {
+                Icon(Icons.Default.Stop, contentDescription = "Zatrzymaj czytanie", tint = Color(0xFF9CCFFF))
+            }
             IconButton(
                 onClick = onVoiceClick,
                 modifier = Modifier
@@ -484,6 +494,9 @@ private fun SettingsScreen(
     companionStatus: String,
     deviceReport: DeviceDiagnosticsReport?,
     onScanDevice: () -> Unit,
+    performanceAssessment: PerformanceAssessment?,
+    onAnalyzePerformance: () -> Unit,
+    onApplyPerformanceProfile: (PerformanceAssessment) -> Unit,
     onScanCompanionApps: () -> Unit,
     onLaunchCompanionApp: (String) -> Unit,
     onTestNotification: () -> Unit

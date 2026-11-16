@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import pl.mora.app.data.MemoryItem
 import pl.mora.app.domain.ChatMessage
 import pl.mora.app.integration.CompanionApp
+import pl.mora.app.integration.DeviceDiagnosticsReport
 import pl.mora.app.domain.EmotionResult
 import java.text.DateFormat
 import java.util.Date
@@ -94,6 +95,8 @@ fun MoraApp(
     onStopOverlay: () -> Unit,
     companionApps: List<CompanionApp>,
     companionStatus: String,
+    deviceReport: DeviceDiagnosticsReport?,
+    onScanDevice: () -> Unit,
     onScanCompanionApps: () -> Unit,
     onLaunchCompanionApp: (String) -> Unit,
     onTestNotification: () -> Unit
@@ -135,6 +138,8 @@ fun MoraApp(
                         onStopOverlay = onStopOverlay,
                         companionApps = companionApps,
                         companionStatus = companionStatus,
+                        deviceReport = deviceReport,
+                        onScanDevice = onScanDevice,
                         onScanCompanionApps = onScanCompanionApps,
                         onLaunchCompanionApp = onLaunchCompanionApp,
                         onTestNotification = onTestNotification
@@ -470,6 +475,8 @@ private fun SettingsScreen(
     onStopOverlay: () -> Unit,
     companionApps: List<CompanionApp>,
     companionStatus: String,
+    deviceReport: DeviceDiagnosticsReport?,
+    onScanDevice: () -> Unit,
     onScanCompanionApps: () -> Unit,
     onLaunchCompanionApp: (String) -> Unit,
     onTestNotification: () -> Unit
@@ -569,6 +576,48 @@ private fun SettingsScreen(
             Icon(Icons.Default.Notifications, contentDescription = null)
             Spacer(Modifier.width(6.dp))
             Text("Wyślij powiadomienie testowe")
+        }
+
+        Divider(color = Color(0xFF382B43))
+        Text("Diagnostyka REDMAGIC 7", color = Color(0xFFFF8DB5), fontWeight = FontWeight.Bold)
+        Text(
+            "Odczyt lokalny na telefonie. Nie wymaga komputera ani debugowania USB.",
+            fontSize = 11.sp,
+            color = Color(0xFFAAA1B5)
+        )
+        OutlinedButton(
+            onClick = onScanDevice,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Skanuj moje urządzenie")
+        }
+        deviceReport?.let { report ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF211A29)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("Raport urządzenia", fontWeight = FontWeight.Bold)
+                    report.lines.forEach { (label, value) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(label, color = Color(0xFFAAA1B5), fontSize = 12.sp)
+                            Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                    Text(
+                        "Dane odczytane lokalnie: ${report.capturedAt}",
+                        color = Color(0xFF93899E),
+                        fontSize = 10.sp
+                    )
+                }
+            }
         }
 
         Divider(color = Color(0xFF382B43))

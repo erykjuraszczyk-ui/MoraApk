@@ -75,6 +75,7 @@ import pl.mora.app.data.MemoryItem
 import pl.mora.app.domain.ChatMessage
 import pl.mora.app.integration.CompanionApp
 import pl.mora.app.integration.DeviceDiagnosticsReport
+import pl.mora.app.integration.PerformanceAssessment
 import pl.mora.app.domain.EmotionResult
 import java.text.DateFormat
 import java.util.Date
@@ -97,6 +98,9 @@ fun MoraApp(
     companionStatus: String,
     deviceReport: DeviceDiagnosticsReport?,
     onScanDevice: () -> Unit,
+    performanceAssessment: PerformanceAssessment?,
+    onAnalyzePerformance: () -> Unit,
+    onApplyPerformanceProfile: (PerformanceAssessment) -> Unit,
     onScanCompanionApps: () -> Unit,
     onLaunchCompanionApp: (String) -> Unit,
     onTestNotification: () -> Unit
@@ -140,6 +144,9 @@ fun MoraApp(
                         companionStatus = companionStatus,
                         deviceReport = deviceReport,
                         onScanDevice = onScanDevice,
+                        performanceAssessment = performanceAssessment,
+                        onAnalyzePerformance = onAnalyzePerformance,
+                        onApplyPerformanceProfile = onApplyPerformanceProfile,
                         onScanCompanionApps = onScanCompanionApps,
                         onLaunchCompanionApp = onLaunchCompanionApp,
                         onTestNotification = onTestNotification
@@ -591,6 +598,42 @@ private fun SettingsScreen(
         ) {
             Text("Skanuj moje urządzenie")
         }
+        Divider(color = Color(0xFF382B43))
+        Text("REDMAGIC Performance Core 1.2.0", color = Color(0xFFFF8DB5), fontWeight = FontWeight.Bold)
+        Text(
+            "Analiza baterii, pamięci i stanu termicznego. MORA nie zmienia ustawień procesora ani systemowego trybu zasilania.",
+            fontSize = 11.sp,
+            color = Color(0xFFAAA1B5)
+        )
+        OutlinedButton(onClick = onAnalyzePerformance, modifier = Modifier.fillMaxWidth()) {
+            Text("Analizuj wydajność telefonu")
+        }
+        performanceAssessment?.let { assessment ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF211A29)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Profil: ${assessment.profile.title}", fontWeight = FontWeight.Bold)
+                    Text(assessment.explanation, fontSize = 12.sp, color = Color(0xFFAAA1B5))
+                    Text(
+                        "Bateria: ${assessment.batteryPercent?.let { "$it%" } ?: "brak danych"} · RAM dostępna: ${assessment.availableRamMb?.let { "$it MB" } ?: "brak danych"}",
+                        fontSize = 11.sp
+                    )
+                    Text(
+                        "Oszczędzanie energii: ${if (assessment.powerSaveMode) "włączone" else "wyłączone"} · Ograniczenie animacji zalecane: ${if (assessment.reducedMotionRecommended) "tak" else "nie"}",
+                        fontSize = 11.sp
+                    )
+                    OutlinedButton(
+                        onClick = { onApplyPerformanceProfile(assessment) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (assessment.reducedMotionRecommended) "Zastosuj ograniczone animacje" else "Zastosuj pełne animacje")
+                    }
+                }
+            }
+        }
+
         deviceReport?.let { report ->
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF211A29)),

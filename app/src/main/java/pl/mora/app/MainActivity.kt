@@ -20,6 +20,8 @@ import pl.mora.app.domain.VoiceController
 import pl.mora.app.integration.CompanionApp
 import pl.mora.app.integration.CompanionAppDiscovery
 import pl.mora.app.integration.CompanionLaunchResult
+import pl.mora.app.integration.DeviceDiagnostics
+import pl.mora.app.integration.DeviceDiagnosticsReport
 import pl.mora.app.integration.NotificationHelper
 import pl.mora.app.integration.OverlayService
 import pl.mora.app.ui.MoraApp
@@ -38,6 +40,7 @@ class MainActivity : ComponentActivity() {
             val companionDiscovery = remember { CompanionAppDiscovery(this@MainActivity) }
             val companionApps = remember { mutableStateOf(emptyList<CompanionApp>()) }
             val companionStatus = remember { mutableStateOf("Wyszukiwanie aplikacji fabrycznej jest opcjonalne.") }
+            val deviceReport = remember { mutableStateOf<DeviceDiagnosticsReport?>(null) }
 
             DisposableEffect(voice) {
                 onDispose { voice.release() }
@@ -94,6 +97,8 @@ class MainActivity : ComponentActivity() {
                 },
                 companionApps = companionApps.value,
                 companionStatus = companionStatus.value,
+                deviceReport = deviceReport.value,
+                onScanDevice = { deviceReport.value = DeviceDiagnostics.inspect(this@MainActivity) },
                 onScanCompanionApps = {
                     companionApps.value = companionDiscovery.findMoraApps()
                     companionStatus.value = if (companionApps.value.isEmpty()) {

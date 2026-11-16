@@ -51,6 +51,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -74,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pl.mora.app.data.MemoryItem
 import pl.mora.app.domain.ChatMessage
+import pl.mora.app.domain.VoiceUiData
 import pl.mora.app.integration.CompanionApp
 import pl.mora.app.integration.DeviceDiagnosticsReport
 import pl.mora.app.integration.PerformanceAssessment
@@ -93,6 +95,12 @@ fun MoraApp(
     onVoiceClick: () -> Unit,
     onSpeak: (String) -> Unit,
     onStopSpeaking: () -> Unit,
+    voiceUiData: VoiceUiData,
+    onSpeechRateChange: (Float) -> Unit,
+    onSpeechPitchChange: (Float) -> Unit,
+    onVoiceSelected: (String) -> Unit,
+    onRefreshVoiceOptions: () -> Unit,
+    onPreviewVoice: () -> Unit,
     onShowOverlaySettings: () -> Unit,
     onStartOverlay: () -> Unit,
     onStopOverlay: () -> Unit,
@@ -150,6 +158,12 @@ fun MoraApp(
                         performanceAssessment = performanceAssessment,
                         onAnalyzePerformance = onAnalyzePerformance,
                         onApplyPerformanceProfile = onApplyPerformanceProfile,
+                        voiceUiData = voiceUiData,
+                        onSpeechRateChange = onSpeechRateChange,
+                        onSpeechPitchChange = onSpeechPitchChange,
+                        onVoiceSelected = onVoiceSelected,
+                        onRefreshVoiceOptions = onRefreshVoiceOptions,
+                        onPreviewVoice = onPreviewVoice,
                         onScanCompanionApps = onScanCompanionApps,
                         onLaunchCompanionApp = onLaunchCompanionApp,
                         onTestNotification = onTestNotification
@@ -490,6 +504,12 @@ private fun SettingsScreen(
     onShowOverlaySettings: () -> Unit,
     onStartOverlay: () -> Unit,
     onStopOverlay: () -> Unit,
+    voiceUiData: VoiceUiData,
+    onSpeechRateChange: (Float) -> Unit,
+    onSpeechPitchChange: (Float) -> Unit,
+    onVoiceSelected: (String) -> Unit,
+    onRefreshVoiceOptions: () -> Unit,
+    onPreviewVoice: () -> Unit,
     companionApps: List<CompanionApp>,
     companionStatus: String,
     deviceReport: DeviceDiagnosticsReport?,
@@ -559,6 +579,60 @@ private fun SettingsScreen(
         ) {
             Text("Zapisz konfigurację AI")
         }
+
+        Divider(color = Color(0xFF382B43))
+        Text("Voice Core 1.4.0", color = Color(0xFFFF8DB5), fontWeight = FontWeight.Bold)
+        Text(
+            if (voiceUiData.settings.ready) "Systemowy syntezator mowy jest gotowy." else "Syntezator jeszcze się uruchamia albo nie ma dostępnego polskiego głosu.",
+            fontSize = 11.sp,
+            color = Color(0xFFAAA1B5)
+        )
+        Text("Szybkość mowy: ${"%.2f".format(java.util.Locale.US, voiceUiData.settings.speechRate)}×", fontWeight = FontWeight.Medium)
+        Slider(
+            value = voiceUiData.settings.speechRate,
+            onValueChange = onSpeechRateChange,
+            valueRange = 0.75f..1.25f
+        )
+        Text("Wysokość głosu: ${"%.2f".format(java.util.Locale.US, voiceUiData.settings.pitch)}×", fontWeight = FontWeight.Medium)
+        Slider(
+            value = voiceUiData.settings.pitch,
+            onValueChange = onSpeechPitchChange,
+            valueRange = 0.8f..1.2f
+        )
+        Text("Dostępne głosy polskie", fontWeight = FontWeight.Medium)
+        if (voiceUiData.voices.isEmpty()) {
+            Text(
+                "Android nie zgłosił osobnych głosów pl-PL. Sprawdź ustawienia zamiany tekstu na mowę i pobrane głosy systemowe.",
+                fontSize = 11.sp,
+                color = Color(0xFFAAA1B5)
+            )
+        } else {
+            voiceUiData.voices.forEach { voiceOption ->
+                FilterChip(
+                    selected = voiceUiData.settings.selectedVoiceId == voiceOption.id,
+                    onClick = { onVoiceSelected(voiceOption.id) },
+                    label = {
+                        Text(
+                            voiceOption.label + if (voiceOption.requiresNetwork) " · online" else " · offline",
+                            fontSize = 11.sp
+                        )
+                    }
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onRefreshVoiceOptions, modifier = Modifier.weight(1f)) {
+                Text("Odśwież głosy")
+            }
+            Button(onClick = onPreviewVoice, modifier = Modifier.weight(1f), enabled = voiceUiData.settings.ready) {
+                Text("Odsłuchaj próbkę")
+            }
+        }
+        Text(
+            "Ustawienia są zapisywane lokalnie. Głosy wymagające sieci mogą korzystać z połączenia dostawcy Androida.",
+            fontSize = 10.sp,
+            color = Color(0xFF93899E)
+        )
 
         Divider(color = Color(0xFF382B43))
         Text("Pamięć i prywatność", color = Color(0xFFFF8DB5), fontWeight = FontWeight.Bold)

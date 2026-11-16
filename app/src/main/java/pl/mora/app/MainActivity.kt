@@ -23,6 +23,8 @@ import pl.mora.app.integration.CompanionLaunchResult
 import pl.mora.app.integration.DeviceDiagnostics
 import pl.mora.app.integration.DeviceDiagnosticsReport
 import pl.mora.app.integration.NotificationHelper
+import pl.mora.app.integration.PerformanceCore
+import pl.mora.app.integration.PerformanceAssessment
 import pl.mora.app.integration.OverlayService
 import pl.mora.app.ui.MoraApp
 import pl.mora.app.ui.MoraViewModel
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity() {
             val companionApps = remember { mutableStateOf(emptyList<CompanionApp>()) }
             val companionStatus = remember { mutableStateOf("Wyszukiwanie aplikacji fabrycznej jest opcjonalne.") }
             val deviceReport = remember { mutableStateOf<DeviceDiagnosticsReport?>(null) }
+            val performanceAssessment = remember { mutableStateOf<PerformanceAssessment?>(null) }
 
             DisposableEffect(voice) {
                 onDispose { voice.release() }
@@ -99,6 +102,9 @@ class MainActivity : ComponentActivity() {
                 companionStatus = companionStatus.value,
                 deviceReport = deviceReport.value,
                 onScanDevice = { deviceReport.value = DeviceDiagnostics.inspect(this@MainActivity) },
+                performanceAssessment = performanceAssessment.value,
+                onAnalyzePerformance = { performanceAssessment.value = PerformanceCore.assess(this@MainActivity) },
+                onApplyPerformanceProfile = { assessment -> viewModel.setReducedMotion(assessment.reducedMotionRecommended) },
                 onScanCompanionApps = {
                     companionApps.value = companionDiscovery.findMoraApps()
                     companionStatus.value = if (companionApps.value.isEmpty()) {

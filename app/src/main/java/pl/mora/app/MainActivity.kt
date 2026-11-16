@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.mora.app.domain.VoiceController
+import pl.mora.app.domain.VoiceUiData
 import pl.mora.app.integration.CompanionApp
 import pl.mora.app.integration.CompanionAppDiscovery
 import pl.mora.app.integration.CompanionLaunchResult
@@ -38,12 +39,15 @@ class MainActivity : ComponentActivity() {
             val viewModel: MoraViewModel = viewModel(
                 factory = remember { MoraViewModelFactory(application) }
             )
-            val voice = remember { VoiceController(this@MainActivity) }
             val companionDiscovery = remember { CompanionAppDiscovery(this@MainActivity) }
             val companionApps = remember { mutableStateOf(emptyList<CompanionApp>()) }
             val companionStatus = remember { mutableStateOf("Wyszukiwanie aplikacji fabrycznej jest opcjonalne.") }
             val deviceReport = remember { mutableStateOf<DeviceDiagnosticsReport?>(null) }
             val performanceAssessment = remember { mutableStateOf<PerformanceAssessment?>(null) }
+            val voiceUiData = remember { mutableStateOf(VoiceUiData()) }
+            val voice = remember {
+                VoiceController(this@MainActivity) { voiceUiData.value = it }
+            }
 
             DisposableEffect(voice) {
                 onDispose { voice.release() }
@@ -82,6 +86,12 @@ class MainActivity : ComponentActivity() {
                 },
                 onSpeak = voice::speak,
                 onStopSpeaking = voice::stopSpeaking,
+                voiceUiData = voiceUiData.value,
+                onSpeechRateChange = { voiceUiData.value = voice.updateSpeechRate(it) },
+                onSpeechPitchChange = { voiceUiData.value = voice.updatePitch(it) },
+                onVoiceSelected = { voiceUiData.value = voice.selectVoice(it) },
+                onRefreshVoiceOptions = { voiceUiData.value = voice.refreshVoiceOptions() },
+                onPreviewVoice = { voice.speak("Cześć! Jestem Mora. Tak brzmi mój polski głos.") },
                 onShowOverlaySettings = {
                     val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

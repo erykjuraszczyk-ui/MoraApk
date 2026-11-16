@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
                     }
                 },
                 onSpeak = voice::speak,
+                onStopSpeaking = voice::stopSpeaking,
                 onShowOverlaySettings = {
                     val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

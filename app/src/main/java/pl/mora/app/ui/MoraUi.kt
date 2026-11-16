@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pl.mora.app.data.MemoryItem
 import pl.mora.app.domain.ChatMessage
+import pl.mora.app.integration.CompanionApp
 import pl.mora.app.domain.EmotionResult
 import java.text.DateFormat
 import java.util.Date
@@ -91,6 +92,10 @@ fun MoraApp(
     onShowOverlaySettings: () -> Unit,
     onStartOverlay: () -> Unit,
     onStopOverlay: () -> Unit,
+    companionApps: List<CompanionApp>,
+    companionStatus: String,
+    onScanCompanionApps: () -> Unit,
+    onLaunchCompanionApp: (String) -> Unit,
     onTestNotification: () -> Unit
 ) {
     val state = viewModel.uiState
@@ -128,6 +133,10 @@ fun MoraApp(
                         onShowOverlaySettings = onShowOverlaySettings,
                         onStartOverlay = onStartOverlay,
                         onStopOverlay = onStopOverlay,
+                        companionApps = companionApps,
+                        companionStatus = companionStatus,
+                        onScanCompanionApps = onScanCompanionApps,
+                        onLaunchCompanionApp = onLaunchCompanionApp,
                         onTestNotification = onTestNotification
                     )
                 }
@@ -459,6 +468,10 @@ private fun SettingsScreen(
     onShowOverlaySettings: () -> Unit,
     onStartOverlay: () -> Unit,
     onStopOverlay: () -> Unit,
+    companionApps: List<CompanionApp>,
+    companionStatus: String,
+    onScanCompanionApps: () -> Unit,
+    onLaunchCompanionApp: (String) -> Unit,
     onTestNotification: () -> Unit
 ) {
     var endpoint by rememberSaveable { mutableStateOf(state.endpoint) }
@@ -556,6 +569,41 @@ private fun SettingsScreen(
             Icon(Icons.Default.Notifications, contentDescription = null)
             Spacer(Modifier.width(6.dp))
             Text("Wyślij powiadomienie testowe")
+        }
+
+        Divider(color = Color(0xFF382B43))
+        Text("Fabryczna Mora — Companion", color = Color(0xFFFF8DB5), fontWeight = FontWeight.Bold)
+        Text(
+            "Wyszukiwanie jest uruchamiane ręcznie. Oryginalna aplikacja pozostaje niezmieniona.",
+            fontSize = 11.sp,
+            color = Color(0xFFAAA1B5)
+        )
+        OutlinedButton(
+            onClick = onScanCompanionApps,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Wyszukaj aplikacje Mora")
+        }
+        Text(companionStatus, fontSize = 12.sp, color = Color(0xFFAAA1B5))
+        companionApps.forEach { app ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF211A29)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(app.displayName, fontWeight = FontWeight.SemiBold)
+                        Text(app.packageName, fontSize = 10.sp, color = Color(0xFFAAA1B5))
+                    }
+                    OutlinedButton(onClick = { onLaunchCompanionApp(app.packageName) }) {
+                        Text("Otwórz")
+                    }
+                }
+            }
         }
 
         state.statusMessage?.let { message ->

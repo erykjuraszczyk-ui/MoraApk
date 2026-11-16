@@ -13,9 +13,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.mora.app.domain.VoiceController
+import pl.mora.app.integration.CompanionApp
+import pl.mora.app.integration.CompanionAppDiscovery
+import pl.mora.app.integration.CompanionLaunchResult
 import pl.mora.app.integration.NotificationHelper
 import pl.mora.app.integration.OverlayService
 import pl.mora.app.ui.MoraApp
@@ -31,6 +35,9 @@ class MainActivity : ComponentActivity() {
                 factory = remember { MoraViewModelFactory(application) }
             )
             val voice = remember { VoiceController(this@MainActivity) }
+            val companionDiscovery = remember { CompanionAppDiscovery(this@MainActivity) }
+            val companionApps = remember { mutableStateOf(emptyList<CompanionApp>()) }
+            val companionStatus = remember { mutableStateOf("Wyszukiwanie aplikacji fabrycznej jest opcjonalne.") }
 
             DisposableEffect(voice) {
                 onDispose { voice.release() }
@@ -84,6 +91,24 @@ class MainActivity : ComponentActivity() {
                 },
                 onStopOverlay = {
                     stopService(Intent(this@MainActivity, OverlayService::class.java))
+                },
+                companionApps = companionApps.value,
+                companionStatus = companionStatus.value,
+                onScanCompanionApps = {
+                    companionApps.value = companionDiscovery.findMoraApps()
+                    companionStatus.value = if (companionApps.value.isEmpty()) {
+                        "Nie znaleziono widocznej aplikacji z nazwą Mora. Asystent MORA AI działa niezależnie."
+                    } else {
+                        "Znaleziono aplikacji: ${companionApps.value.size}. Wybierz właściwą pozycję."
+                    }
+                },
+                onLaunchCompanionApp = { packageName ->
+                    companionStatus.value = when (val result = companionDiscovery.launch(packageName)) {
+                        CompanionLaunchResult.Launched -> "Przekazano sterowanie do wybranej aplikacji."
+                        CompanionLaunchResult.NotInstalledOrNotVisible -> "Aplikacja nie jest zainstalowana lub nie jest widoczna."
+                        CompanionLaunchResult.NoLaunchActivity -> "Wybrana aplikacja nie udostępnia ekranu startowego."
+                        is CompanionLaunchResult.Failed -> "Nie udało się uruchomić aplikacji: ${result.reason}"
+                    }
                 },
                 onTestNotification = {
                     if (Build.VERSION.SDK_INT >= 33 &&
